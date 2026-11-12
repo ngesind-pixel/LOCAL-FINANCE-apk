@@ -1,0 +1,146 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidCompany(data) {
+      return data.name is string && data.name.size() > 0
+        && data.address is string
+        && (!('status' in data) || data.status in ['ACTIVE', 'SUSPENDED']);
+    }
+
+    function isValidUser(data) {
+      return data.userId is string
+        && data.name is string && data.name.size() > 0
+        && data.role in ['DEVELOPER', 'COMPANY_ADMIN', 'MANAGER', 'COLLECTION_EXECUTIVE']
+        && data.companyId is string;
+    }
+
+    function isValidCustomer(data) {
+      return data.companyId is string && data.companyId.size() > 0
+        && data.name is string && data.name.size() > 0
+        && data.contact is string
+        && data.aadharNumber is string
+        && data.cif is string;
+    }
+
+    function isValidPartner(data) {
+      return data.companyId is string && data.companyId.size() > 0
+        && data.name is string && data.name.size() > 0
+        && data.contact is string
+        && data.aadharNumber is string
+        && data.pin is string;
+    }
+
+    function isValidDailyBook(data) {
+      return data.companyId is string && data.companyId.size() > 0
+        && data.customerCif is string
+        && data.bookNumber is string
+        && data.createdByManagerId is string;
+    }
+
+    function isValidPartnerDeposit(data) {
+      return data.companyId is string
+        && data.partnerPin is string
+        && data.amount is number && data.amount > 0;
+    }
+
+    function isValidDailyCollection(data) {
+      return data.companyId is string
+        && data.receiptNumber is string
+        && data.bookNumber is string
+        && data.depositAmount is number && data.depositAmount > 0;
+    }
+
+    // --- Users Collection ---
+    match /Users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (isOwner(userId) || request.resource.data.userId == request.auth.uid || request.auth.token.email != null) && isValidUser(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (isOwner(userId) || request.resource.data.userId == request.auth.uid || request.auth.token.email != null) && isValidUser(request.resource.data);
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // --- Companies Collection ---
+    match /Companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidCompany(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidCompany(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // --- Customers Collection ---
+    match /Customers/{customerId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidCustomer(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+    match /customers/{customerId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidCustomer(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // --- Partners Collection ---
+    match /Partners/{partnerId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidPartner(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+    match /partners/{partnerId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidPartner(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // --- Daily Books Collection ---
+    match /DailyBooks/{bookId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidDailyBook(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+    match /daily_deposit_books/{bookId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidDailyBook(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // --- Partner Deposits Collection ---
+    match /PartnerDeposits/{depositId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidPartnerDeposit(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+    match /partner_deposits/{depositId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidPartnerDeposit(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    // --- Daily Collections Collection ---
+    match /DailyCollections/{collectionId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidDailyCollection(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+    match /daily_collections/{collectionId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidDailyCollection(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+  }
+}

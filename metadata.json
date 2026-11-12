@@ -1,0 +1,6 @@
+{
+  "name": "LOCAL FINANCE",
+  "description": "Local daily collection and recurring micro-deposit company management system with multi-role access, 58mm thermal receipts, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

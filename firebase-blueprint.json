@@ -1,0 +1,190 @@
+{
+  "entities": {
+    "Company": {
+      "title": "Company",
+      "description": "Represents an onboarded local micro-finance or daily collection company.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Company legal/display name" },
+        "address": { "type": "string", "description": "Company physical office address" },
+        "contact": { "type": "string", "description": "Company primary contact phone number" },
+        "logoUrl": { "type": "string", "description": "URL or asset URI for company logo" },
+        "pinStart": { "type": "number", "description": "Starting number for 4-digit Partner PIN sequence (e.g. 1001)" },
+        "cifStart": { "type": "number", "description": "Starting number for 5-digit Customer CIF sequence (e.g. 20001)" },
+        "bookStart": { "type": "number", "description": "Starting number for 6-digit Daily Deposit Book sequence (e.g. 500001)" },
+        "managerCanApproveCustomer": { "type": "boolean", "description": "Delegated permission for managers to approve customer onboarding" },
+        "managerCanApproveBook": { "type": "boolean", "description": "Delegated permission for managers to approve new daily deposit books" },
+        "status": { "type": "string", "enum": ["ACTIVE", "SUSPENDED"], "description": "Company account active status" },
+        "createdBy": { "type": "string", "description": "Developer UID who provisioned the company" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["name", "address", "pinStart", "cifStart", "bookStart", "status"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based permissions and hierarchical company association.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID matching document ID" },
+        "email": { "type": "string", "description": "Staff email address" },
+        "name": { "type": "string", "description": "Full staff member name" },
+        "role": { "type": "string", "enum": ["DEVELOPER", "COMPANY_ADMIN", "MANAGER", "COLLECTION_EXECUTIVE"], "description": "Access control role" },
+        "companyId": { "type": "string", "description": "Foreign key to Companies collection" },
+        "contact": { "type": "string", "description": "Contact telephone number" },
+        "assignedManagerId": { "type": "string", "description": "Foreign key to Users collection identifying supervising Manager (required for Collection Executive)" },
+        "assignedManagerName": { "type": "string", "description": "Denormalized name of supervising Manager" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["userId", "name", "role", "companyId"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer registered for daily recurring deposit collections under a CIF number.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "description": "Foreign key to Companies collection" },
+        "name": { "type": "string", "description": "Customer full legal name" },
+        "businessName": { "type": "string", "description": "Name of shop, stall, or enterprise" },
+        "contact": { "type": "string", "description": "Customer phone number" },
+        "aadharNumber": { "type": "string", "description": "12-digit Government Aadhar identity number" },
+        "panNumber": { "type": "string", "description": "10-character Income Tax PAN number" },
+        "cif": { "type": "string", "description": "Auto-generated 5-digit unique Customer Identification File number (e.g. 20001)" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"], "description": "Onboarding verification status" },
+        "onboardedByRole": { "type": "string", "description": "Role of the staff member who onboarded customer (MANAGER or COLLECTION_EXECUTIVE)" },
+        "onboardedById": { "type": "string", "description": "UID of the onboarding staff member" },
+        "onboardedByName": { "type": "string", "description": "Name of the onboarding staff member" },
+        "approvedBy": { "type": "string", "description": "UID or name of Company Admin/Manager who approved customer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Registration timestamp" }
+      },
+      "required": ["companyId", "name", "contact", "aadharNumber", "cif", "status"]
+    },
+    "Partner": {
+      "title": "Partner",
+      "description": "Capital investor or equity partner of the daily collection company.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "description": "Foreign key to Companies collection" },
+        "name": { "type": "string", "description": "Partner full name" },
+        "contact": { "type": "string", "description": "Partner contact number" },
+        "aadharNumber": { "type": "string", "description": "12-digit Partner Aadhar identification number" },
+        "pin": { "type": "string", "description": "Auto-generated 4-digit Partner Identification Number (e.g. 1001)" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Onboarding timestamp" }
+      },
+      "required": ["companyId", "name", "contact", "aadharNumber", "pin"]
+    },
+    "DailyBook": {
+      "title": "DailyBook",
+      "description": "Daily recurring deposit book opened under a verified customer CIF number.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "description": "Foreign key to Companies collection" },
+        "customerCif": { "type": "string", "description": "Foreign key to Customers.cif" },
+        "customerName": { "type": "string", "description": "Denormalized customer name" },
+        "customerContact": { "type": "string", "description": "Customer contact number" },
+        "bookNumber": { "type": "string", "description": "Auto-generated 6-digit collection book number (e.g. 500001)" },
+        "createdByManagerId": { "type": "string", "description": "UID of Manager who created the recurring deposit book" },
+        "createdByManagerName": { "type": "string", "description": "Denormalized manager name" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"], "description": "Book approval status" },
+        "cumulativeDeposit": { "type": "number", "description": "Aggregated daily deposit balance in INR" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["companyId", "customerCif", "bookNumber", "createdByManagerId", "status"]
+    },
+    "PartnerDeposit": {
+      "title": "PartnerDeposit",
+      "description": "Capital investment ledger entry deposited by a company partner.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "description": "Foreign key to Companies collection" },
+        "partnerPin": { "type": "string", "description": "Foreign key to Partners.pin" },
+        "partnerName": { "type": "string", "description": "Denormalized partner name" },
+        "amount": { "type": "number", "description": "Capital deposit amount in INR" },
+        "depositDate": { "type": "string", "description": "Calendar date (yyyy-MM-dd)" },
+        "depositTime": { "type": "string", "description": "Time string (hh:mm a)" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Deposit timestamp" }
+      },
+      "required": ["companyId", "partnerPin", "amount", "depositDate"]
+    },
+    "DailyCollection": {
+      "title": "DailyCollection",
+      "description": "Individual daily collection record recorded in field by Collection Executive.",
+      "type": "object",
+      "properties": {
+        "companyId": { "type": "string", "description": "Foreign key to Companies collection" },
+        "receiptNumber": { "type": "string", "description": "Unique receipt identifier (RCP-YYYYMMDD-XXXX)" },
+        "customerName": { "type": "string", "description": "Customer name printed on 58mm thermal receipt" },
+        "cif": { "type": "string", "description": "Customer 5-digit CIF number" },
+        "bookNumber": { "type": "string", "description": "Associated 6-digit Daily Deposit Book number" },
+        "depositAmount": { "type": "number", "description": "Amount collected in cash" },
+        "cumulativeTotal": { "type": "number", "description": "Cumulative total including this collection" },
+        "collectedByExecutiveId": { "type": "string", "description": "UID of Collection Executive who collected deposit" },
+        "collectedByExecutiveName": { "type": "string", "description": "Name of Collection Executive" },
+        "managerId": { "type": "string", "description": "UID of supervising Manager receiving cash handover" },
+        "managerCollectedMarker": { "type": "boolean", "description": "Marker set by Manager acknowledging cash receipt from Executive" },
+        "collectedDate": { "type": "string", "description": "Collection date (yyyy-MM-dd)" },
+        "collectedTime": { "type": "string", "description": "Collection time (hh:mm a)" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of transaction" }
+      },
+      "required": ["companyId", "receiptNumber", "cif", "bookNumber", "depositAmount", "cumulativeTotal", "collectedByExecutiveId"]
+    }
+  },
+  "firestore": {
+    "/Companies/{companyId}": {
+      "schema": "Company",
+      "description": "Top-level collection of onboarded companies"
+    },
+    "/companies/{companyId}": {
+      "schema": "Company",
+      "description": "Alias path for onboarded companies"
+    },
+    "/Users/{userId}": {
+      "schema": "User",
+      "description": "User profiles with role claims and manager associations"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Alias path for user profiles"
+    },
+    "/Customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Customers onboarded under CIF numbers"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Alias path for customers"
+    },
+    "/Partners/{partnerId}": {
+      "schema": "Partner",
+      "description": "Investment partners with PIN identifiers"
+    },
+    "/partners/{partnerId}": {
+      "schema": "Partner",
+      "description": "Alias path for partners"
+    },
+    "/DailyBooks/{bookId}": {
+      "schema": "DailyBook",
+      "description": "Recurring deposit books under specific CIF numbers"
+    },
+    "/daily_deposit_books/{bookId}": {
+      "schema": "DailyBook",
+      "description": "Alias path for daily deposit books"
+    },
+    "/PartnerDeposits/{depositId}": {
+      "schema": "PartnerDeposit",
+      "description": "Partner capital contribution ledger"
+    },
+    "/partner_deposits/{depositId}": {
+      "schema": "PartnerDeposit",
+      "description": "Alias path for partner deposits"
+    },
+    "/DailyCollections/{collectionId}": {
+      "schema": "DailyCollection",
+      "description": "Individual field collection receipts and manager cash markers"
+    },
+    "/daily_collections/{collectionId}": {
+      "schema": "DailyCollection",
+      "description": "Alias path for daily collections"
+    }
+  }
+}
